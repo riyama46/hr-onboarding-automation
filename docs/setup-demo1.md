@@ -60,6 +60,9 @@ click **Advanced → Go to (app name)**.
 | Manager Name | Short answer |
 | Manager Email | Short answer (email validation) |
 
+**Publish** the form with responders set to **Specific people** (Share → Responder view → Restricted), not "Anyone with the link".
+Anyone who can submit the form can make the workflow send emails, share files and send calendar invites from your account.
+
 Then **Responses → Link to Sheets** → create a new spreadsheet. Google adds `Timestamp` as column A.
 Optionally format the `Start Date` column as `yyyy-MM-dd` (Format → Number → Custom date and time);
 the workflow also accepts `d/M/yyyy` and raw date serials.
