@@ -64,8 +64,9 @@ click **Advanced → Go to (app name)**.
 Anyone who can submit the form can make the workflow send emails, share files and send calendar invites from your account.
 
 Then **Responses → Link to Sheets** → create a new spreadsheet. Google adds `Timestamp` as column A.
-Optionally format the `Start Date` column as `yyyy-MM-dd` (Format → Number → Custom date and time);
-the workflow also accepts `d/M/yyyy` and raw date serials.
+The trigger reads dates as serial numbers (**Options → DateTime Render → Serial Number**), so `Start Date`
+is parsed correctly whatever the sheet locale is. Without it, a US-locale sheet sends `11/9/2026` and the
+date is ambiguous (9 Nov vs 11 Sep).
 
 **Drive**: create a Google Doc `Onboarding Checklist - TEMPLATE`. Copies land in the same folder.
 
