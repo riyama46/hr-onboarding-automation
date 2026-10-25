@@ -1,0 +1,28 @@
+# Secrets
+.env
+.env.*
+!.env.example
+*credentials*.json
+*client_secret*.json
+*service-account*.json
+
+# n8n local data (DB, encryption key, logs)
+.n8n/
+n8n-data/
+*.sqlite
+*.sqlite-journal
+
+# Node
+node_modules/
+npm-debug.log*
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Raw recordings (upload ke YouTube/Loom, jangan commit)
+*.mp4
+*.mov
+*.mkv

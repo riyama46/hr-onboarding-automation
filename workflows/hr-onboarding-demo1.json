@@ -1,0 +1,236 @@
+{
+  "name": "HR Onboarding Automation (Demo 1)",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## HR Onboarding Automation\n**Flow:** Google Form -> Sheet -> AI welcome email -> Drive checklist copy -> Calendar invite -> HR notification\n\n**Setup:**\n1. Sheet headers (row 1): Timestamp | Full Name | Personal Email | Position | Department | Start Date | Manager Name | Manager Email\n2. Start Date accepted as yyyy-MM-dd, d/M/yyyy, or a Sheets date serial\n3. Pick your Sheet in the trigger, your checklist template in Copy Checklist\n4. Set HR email in Normalize Data (hrEmail)\n5. Connect Google + Gemini credentials\n6. Workflow timezone: Asia/Jakarta (Settings)",
+        "height": 320,
+        "width": 520
+      },
+      "id": "a1b2c3d4-0001-4000-8000-000000000001",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-60, -380]
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "",
+          "mode": "list"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "",
+          "mode": "list"
+        },
+        "event": "rowAdded",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0002-4000-8000-000000000002",
+      "name": "New Hire Form Response",
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [0, 0]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "f01", "name": "fullName", "value": "={{ String($json['Full Name']).trim() }}", "type": "string" },
+            { "id": "f02", "name": "firstName", "value": "={{ String($json['Full Name']).trim().split(' ')[0] }}", "type": "string" },
+            { "id": "f03", "name": "email", "value": "={{ String($json['Personal Email']).trim().toLowerCase() }}", "type": "string" },
+            { "id": "f04", "name": "position", "value": "={{ $json['Position'] }}", "type": "string" },
+            { "id": "f05", "name": "department", "value": "={{ $json['Department'] }}", "type": "string" },
+            { "id": "f06", "name": "startDate", "value": "={{ typeof $json['Start Date'] === 'number' ? DateTime.fromISO('1899-12-30').plus({ days: $json['Start Date'] }).toISODate() : (DateTime.fromISO(String($json['Start Date'])).isValid ? DateTime.fromISO(String($json['Start Date'])).toISODate() : DateTime.fromFormat(String($json['Start Date']), 'd/M/yyyy').toISODate()) }}", "type": "string" },
+            { "id": "f07", "name": "managerName", "value": "={{ $json['Manager Name'] }}", "type": "string" },
+            { "id": "f08", "name": "managerEmail", "value": "={{ String($json['Manager Email']).trim().toLowerCase() }}", "type": "string" },
+            { "id": "f09", "name": "hrEmail", "value": "hr@yourcompany.com", "type": "string" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-0003-4000-8000-000000000003",
+      "name": "Normalize Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [220, 0]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an HR coordinator at a small company. Write a warm, concise welcome email for a new hire.\n\nNew hire: {{ $json.fullName }} (call them {{ $json.firstName }})\nPosition: {{ $json.position }}\nDepartment: {{ $json.department }}\nStart date: {{ $json.startDate }}, 09:00\nManager: {{ $json.managerName }}\n\nRules:\n- Max 140 words, friendly but professional\n- Mention the first-day meeting at 09:00 with their manager\n- Mention that an onboarding checklist has been shared with them via Google Drive\n- No placeholders like [Company Name]\n- Body as simple HTML using <p> tags only\n\nReturn ONLY valid JSON, no markdown fences:\n{\"subject\": \"...\", \"body_html\": \"...\"}",
+        "hasOutputParser": false
+      },
+      "id": "a1b2c3d4-0004-4000-8000-000000000004",
+      "name": "AI Write Welcome Email",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.5,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "position": [440, 0]
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-flash-lite-latest",
+        "options": {
+          "temperature": 0.4
+        }
+      },
+      "id": "a1b2c3d4-0005-4000-8000-000000000005",
+      "name": "Gemini Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [440, 220]
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map(item => {\n  const raw = String(item.json.text || '');\n  const start = raw.indexOf('{');\n  const end = raw.lastIndexOf('}');\n  const clean = start >= 0 && end > start ? raw.slice(start, end + 1) : raw;\n  let parsed;\n  try {\n    parsed = JSON.parse(clean);\n  } catch (e) {\n    throw new Error('AI output is not valid JSON: ' + raw.slice(0, 200));\n  }\n  if (!parsed.subject || !parsed.body_html) {\n    throw new Error('AI output missing subject or body_html');\n  }\n  return { json: { subject: parsed.subject, bodyHtml: parsed.body_html } };\n});"
+      },
+      "id": "a1b2c3d4-0006-4000-8000-000000000006",
+      "name": "Parse AI Output",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [700, 0]
+    },
+    {
+      "parameters": {
+        "operation": "copy",
+        "fileId": {
+          "__rl": true,
+          "value": "",
+          "mode": "list"
+        },
+        "name": "=Onboarding Checklist - {{ $('Normalize Data').item.json.fullName }}",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0007-4000-8000-000000000007",
+      "name": "Copy Checklist Template",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [920, 0]
+    },
+    {
+      "parameters": {
+        "operation": "share",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "permissionsUi": {
+          "permissionsValues": {
+            "role": "writer",
+            "type": "user",
+            "emailAddress": "={{ $('Normalize Data').item.json.email }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-0008-4000-8000-000000000008",
+      "name": "Share Checklist",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [1140, 0]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Normalize Data').item.json.email }}",
+        "subject": "={{ $('Parse AI Output').item.json.subject }}",
+        "emailType": "html",
+        "message": "={{ $('Parse AI Output').item.json.bodyHtml }}<p>Your checklist: <a href=\"https://docs.google.com/document/d/{{ $('Copy Checklist Template').item.json.id }}\">Open onboarding checklist</a></p>",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "a1b2c3d4-0009-4000-8000-000000000009",
+      "name": "Send Welcome Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [1360, 0]
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "",
+          "mode": "list"
+        },
+        "start": "={{ DateTime.fromISO($('Normalize Data').item.json.startDate).set({ hour: 9, minute: 0 }).toISO() }}",
+        "end": "={{ DateTime.fromISO($('Normalize Data').item.json.startDate).set({ hour: 9, minute: 30 }).toISO() }}",
+        "additionalFields": {
+          "summary": "=Day 1 Welcome: {{ $('Normalize Data').item.json.fullName }} x {{ $('Normalize Data').item.json.managerName }}",
+          "description": "=First-day meeting for {{ $('Normalize Data').item.json.fullName }} ({{ $('Normalize Data').item.json.position }}, {{ $('Normalize Data').item.json.department }}).",
+          "attendees": [
+            "={{ $('Normalize Data').item.json.email }},{{ $('Normalize Data').item.json.managerEmail }}"
+          ],
+          "sendUpdates": "all"
+        }
+      },
+      "id": "a1b2c3d4-0010-4000-8000-000000000010",
+      "name": "Create Day-1 Meeting",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [1580, 0]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Normalize Data').item.json.hrEmail }}",
+        "subject": "=New hire onboarded: {{ $('Normalize Data').item.json.fullName }}",
+        "emailType": "html",
+        "message": "=<p><b>{{ $('Normalize Data').item.json.fullName }}</b> ({{ $('Normalize Data').item.json.position }}, {{ $('Normalize Data').item.json.department }}) is set up.</p><ul><li>Start: {{ $('Normalize Data').item.json.startDate }}</li><li>Manager: {{ $('Normalize Data').item.json.managerName }}</li><li>Welcome email: sent</li><li>Checklist: <a href=\"https://docs.google.com/document/d/{{ $('Copy Checklist Template').item.json.id }}\">open</a></li><li>Day-1 meeting: <a href=\"{{ $json.htmlLink }}\">calendar event</a></li></ul>",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "a1b2c3d4-0011-4000-8000-000000000011",
+      "name": "Notify HR",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [1800, 0]
+    }
+  ],
+  "connections": {
+    "New Hire Form Response": {
+      "main": [[{ "node": "Normalize Data", "type": "main", "index": 0 }]]
+    },
+    "Normalize Data": {
+      "main": [[{ "node": "AI Write Welcome Email", "type": "main", "index": 0 }]]
+    },
+    "Gemini Chat Model": {
+      "ai_languageModel": [[{ "node": "AI Write Welcome Email", "type": "ai_languageModel", "index": 0 }]]
+    },
+    "AI Write Welcome Email": {
+      "main": [[{ "node": "Parse AI Output", "type": "main", "index": 0 }]]
+    },
+    "Parse AI Output": {
+      "main": [[{ "node": "Copy Checklist Template", "type": "main", "index": 0 }]]
+    },
+    "Copy Checklist Template": {
+      "main": [[{ "node": "Share Checklist", "type": "main", "index": 0 }]]
+    },
+    "Share Checklist": {
+      "main": [[{ "node": "Send Welcome Email", "type": "main", "index": 0 }]]
+    },
+    "Send Welcome Email": {
+      "main": [[{ "node": "Create Day-1 Meeting", "type": "main", "index": 0 }]]
+    },
+    "Create Day-1 Meeting": {
+      "main": [[{ "node": "Notify HR", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Jakarta"
+  },
+  "pinData": {}
+}
