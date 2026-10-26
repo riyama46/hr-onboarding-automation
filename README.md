@@ -40,13 +40,14 @@ Google Form → Google Sheet → Normalize → Gemini → Drive (copy + share) �
 ```
 
 1. **Google Sheets Trigger** — HR fills in a Google Form (name, personal email, position, department, start date, manager). n8n polls the linked response sheet every minute for new rows.
-2. **Normalize Data** — trims and lower-cases emails, extracts the first name, and converts the start date to `yyyy-MM-dd` whatever format the sheet returns.
-3. **Gemini** — writes a personalised welcome email (subject + HTML body, max 140 words) based on role, department, manager and start date.
-4. **Parse AI Output** — validates the JSON from Gemini; the run fails loudly instead of sending a broken email.
-5. **Google Drive** — copies the onboarding checklist template, names it after the hire, and shares it with them.
-6. **Gmail** — sends the welcome email with a link to the checklist.
-7. **Google Calendar** — creates a 09:00–09:30 Day-1 meeting on the start date and invites the hire and their manager.
-8. **Gmail** — sends HR a summary with links to the checklist and the calendar event.
+2. **Skip Empty Rows** — ignores blank rows (for example after someone clears old rows in the sheet), so they never reach the email or sharing steps.
+3. **Normalize Data** — trims and lower-cases emails, extracts the first name, and converts the start date to `yyyy-MM-dd` whatever format the sheet returns.
+4. **Gemini** — writes a personalised welcome email (subject + HTML body, max 140 words) based on role, department, manager and start date.
+5. **Parse AI Output** — validates the JSON from Gemini; the run fails loudly instead of sending a broken email.
+6. **Google Drive** — copies the onboarding checklist template, names it after the hire, and shares it with them.
+7. **Gmail** — sends the welcome email with a link to the checklist.
+8. **Google Calendar** — creates a 09:00–09:30 Day-1 meeting on the start date and invites the hire and their manager.
+9. **Gmail** — sends HR a summary with links to the checklist and the calendar event.
 
 ### Results
 
