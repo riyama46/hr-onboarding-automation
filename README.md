@@ -14,7 +14,7 @@ Each demo below is a working workflow you can import into your own n8n instance.
 
 ![Workflow overview](screenshots/demo1-workflow.png)
 
-▶️ **Video walkthrough:** _[link coming soon]_
+▶️ **Video walkthrough:** [Watch the demo (Google Drive)](https://drive.google.com/file/d/19lsJ6VCuhCkXzuxrO5nFEEeYeCKG5pwa/view?usp=sharing)
 
 ### Problem
 
