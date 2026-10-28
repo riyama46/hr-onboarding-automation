@@ -3,7 +3,7 @@
   "nodes": [
     {
       "parameters": {
-        "content": "## HR Onboarding Automation\n**Flow:** Google Form -> Sheet -> AI welcome email -> Drive checklist copy -> Calendar invite -> HR notification\n\n**Setup:**\n1. Sheet headers (row 1): Timestamp | Full Name | Personal Email | Position | Department | Start Date | Manager Name | Manager Email\n2. Trigger returns dates as serial numbers (DateTime Render), so Start Date works with any sheet locale\n3. Pick your Sheet in the trigger, your checklist template in Copy Checklist\n4. Set HR email in Normalize Data (hrEmail)\n5. Connect Google + Gemini credentials\n6. Workflow timezone: Asia/Jakarta (Settings)",
+        "content": "## HR Onboarding Automation\n**Flow:** Google Form -> Sheet -> skip empty rows -> AI welcome email -> Drive checklist copy + share -> Gmail -> Calendar Day-1 invite -> HR summary\n\n**Setup:**\n1. Sheet headers (row 1): Timestamp | Full Name | Personal Email | Position | Department | Start Date | Manager Name | Manager Email\n2. Trigger returns dates as serial numbers (DateTime Render), so Start Date works with any sheet locale\n3. Pick your Sheet in the trigger, your checklist template in Copy Checklist Template\n4. Set HR email in Normalize Data (hrEmail)\n5. Connect Google + Gemini credentials\n6. Workflow timezone: Asia/Jakarta (Settings)",
         "height": 320,
         "width": 520
       },
