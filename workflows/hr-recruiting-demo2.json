@@ -1,0 +1,610 @@
+{
+  "name": "HR Recruiting Screening Automation (Demo 2)",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## AI Candidate Screening\n**Flow:** Google Form -> Sheet -> skip empty rows -> role rubric from sheet -> Gemini scores 1-5 -> log to Screening tab -> score >= 4: interview invite + recruiter alert / else: Gemini writes a kind reply as a Gmail DRAFT for the recruiter to review\n\n**Setup:**\n1. One spreadsheet, three tabs:\n   - Form Responses 1 (linked to the Form): Timestamp | Full Name | Email | Role Applied For | Years of Experience | Experience Summary | CV or LinkedIn URL\n   - Roles: Role | Must Have | Nice to Have | Min Years\n   - Screening: Screened At | Full Name | Email | Role | Years | Score | Next Step | Strengths | Concerns | Summary | Action\n2. Pick the spreadsheet + tab From list in the trigger, Get Role Rubric and Log to Screening Sheet\n3. Set recruiterEmail, bookingLink, companyName and passScore in Normalize Candidate\n4. Connect Google + Gemini credentials\n5. Workflow timezone: Asia/Jakarta (Settings)\n\nRejections are never sent automatically: they wait in Gmail Drafts.",
+        "height": 460,
+        "width": 900
+      },
+      "id": "b2c3d4e5-0001-4000-8000-000000000001",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -220,
+        -520
+      ]
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "",
+          "mode": "list"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "",
+          "mode": "list"
+        },
+        "event": "rowAdded",
+        "options": {
+          "dateTimeRenderOption": "SERIAL_NUMBER"
+        }
+      },
+      "id": "b2c3d4e5-0002-4000-8000-000000000002",
+      "name": "New Application",
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [
+        -220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json['Email'] }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "b2c3d4e5-0003-4000-8000-000000000003",
+      "name": "Skip Empty Rows",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f01",
+              "name": "fullName",
+              "value": "={{ String($json['Full Name']).trim() }}",
+              "type": "string"
+            },
+            {
+              "id": "f02",
+              "name": "firstName",
+              "value": "={{ String($json['Full Name']).trim().split(' ')[0] }}",
+              "type": "string"
+            },
+            {
+              "id": "f03",
+              "name": "email",
+              "value": "={{ String($json['Email']).trim().toLowerCase() }}",
+              "type": "string"
+            },
+            {
+              "id": "f04",
+              "name": "role",
+              "value": "={{ String($json['Role Applied For']).trim() }}",
+              "type": "string"
+            },
+            {
+              "id": "f05",
+              "name": "yearsExperience",
+              "value": "={{ Number($json['Years of Experience']) || 0 }}",
+              "type": "number"
+            },
+            {
+              "id": "f06",
+              "name": "experienceSummary",
+              "value": "={{ String($json['Experience Summary'] || '').trim() }}",
+              "type": "string"
+            },
+            {
+              "id": "f07",
+              "name": "profileUrl",
+              "value": "={{ String($json['CV or LinkedIn URL'] || '').trim() }}",
+              "type": "string"
+            },
+            {
+              "id": "f08",
+              "name": "recruiterEmail",
+              "value": "recruiter@yourcompany.com",
+              "type": "string"
+            },
+            {
+              "id": "f09",
+              "name": "bookingLink",
+              "value": "https://cal.com/your-team/interview",
+              "type": "string"
+            },
+            {
+              "id": "f10",
+              "name": "companyName",
+              "value": "Your Company",
+              "type": "string"
+            },
+            {
+              "id": "f11",
+              "name": "passScore",
+              "value": 4,
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b2c3d4e5-0004-4000-8000-000000000004",
+      "name": "Normalize Candidate",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "",
+          "mode": "list"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "",
+          "mode": "list"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Role",
+              "lookupValue": "={{ $json.role }}"
+            }
+          ]
+        },
+        "options": {
+          "returnFirstMatch": true
+        }
+      },
+      "id": "b2c3d4e5-0005-4000-8000-000000000005",
+      "name": "Get Role Rubric",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        440,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an experienced recruiter doing a first screening of a job application. Score the candidate against the role rubric, using only what the candidate wrote.\n\nRole: {{ $('Normalize Candidate').item.json.role }}\nMust have: {{ $json['Must Have'] }}\nNice to have: {{ $json['Nice to Have'] }}\nMinimum years of experience: {{ $json['Min Years'] }}\n\nCandidate years of experience: {{ $('Normalize Candidate').item.json.yearsExperience }}\nCandidate experience summary:\n\"\"\"\n{{ $('Normalize Candidate').item.json.experienceSummary }}\n\"\"\"\n\nScoring:\n5 = meets all must-haves and most nice-to-haves\n4 = meets all must-haves\n3 = meets most must-haves\n2 = meets few must-haves\n1 = not a fit for this role\n\nRules:\n- Judge skills and experience only. Ignore name, gender, age, religion, ethnicity, nationality and photos.\n- If the summary is too thin to judge a must-have, list it as a concern instead of guessing.\n- strengths: exactly 3 short bullet phrases. concerns: exactly 2 short bullet phrases; for a strong candidate, list gaps or claims to verify in the interview instead of \"none\".\n- next_step: \"interview\", \"hold\" or \"reject\".\n- summary: max 40 words, neutral tone, written for the recruiter.\n\nReturn ONLY valid JSON, no markdown fences:\n{\"score\": 1, \"strengths\": [\"...\", \"...\", \"...\"], \"concerns\": [\"...\", \"...\"], \"next_step\": \"...\", \"summary\": \"...\"}",
+        "hasOutputParser": false
+      },
+      "id": "b2c3d4e5-0006-4000-8000-000000000006",
+      "name": "AI Screen Candidate",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.5,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "position": [
+        660,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-flash-lite-latest",
+        "options": {
+          "temperature": 0.2
+        }
+      },
+      "id": "b2c3d4e5-0007-4000-8000-000000000007",
+      "name": "Gemini Screening Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        660,
+        220
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const passScore = Number($('Normalize Candidate').first().json.passScore) || 4;\n\nreturn $input.all().map(item => {\n  const raw = String(item.json.text || '');\n  const start = raw.indexOf('{');\n  const end = raw.lastIndexOf('}');\n  const clean = start >= 0 && end > start ? raw.slice(start, end + 1) : raw;\n  let parsed;\n  try {\n    parsed = JSON.parse(clean);\n  } catch (e) {\n    throw new Error('AI output is not valid JSON: ' + raw.slice(0, 200));\n  }\n  const score = Number(parsed.score);\n  if (!Number.isInteger(score) || score < 1 || score > 5) {\n    throw new Error('AI score must be an integer 1-5, got: ' + parsed.score);\n  }\n  if (!Array.isArray(parsed.strengths) || !Array.isArray(parsed.concerns) || !parsed.summary) {\n    throw new Error('AI output missing strengths, concerns or summary');\n  }\n  // Routing follows the score, so the AI cannot invite a low scorer or reject a high one\n  const passed = score >= passScore;\n  const aiStep = String(parsed.next_step || '').toLowerCase();\n  const nextStep = passed ? 'interview' : (aiStep === 'reject' ? 'reject' : 'hold');\n  return {\n    json: {\n      score,\n      passed,\n      nextStep,\n      strengths: parsed.strengths.slice(0, 3).map(String),\n      concerns: parsed.concerns.slice(0, 2).map(String),\n      summary: String(parsed.summary)\n    }\n  };\n});"
+      },
+      "id": "b2c3d4e5-0008-4000-8000-000000000008",
+      "name": "Parse AI Output",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        920,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "",
+          "mode": "list"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "",
+          "mode": "list"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Screened At": "={{ $now.toFormat('yyyy-MM-dd HH:mm') }}",
+            "Full Name": "={{ $('Normalize Candidate').item.json.fullName }}",
+            "Email": "={{ $('Normalize Candidate').item.json.email }}",
+            "Role": "={{ $('Normalize Candidate').item.json.role }}",
+            "Years": "={{ $('Normalize Candidate').item.json.yearsExperience }}",
+            "Score": "={{ $json.score }}",
+            "Next Step": "={{ $json.nextStep }}",
+            "Strengths": "={{ $json.strengths.join('; ') }}",
+            "Concerns": "={{ $json.concerns.join('; ') }}",
+            "Summary": "={{ $json.summary }}",
+            "Action": "={{ $json.passed ? 'Interview invite sent' : 'Reply drafted, waiting for recruiter review' }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            { "id": "Screened At", "displayName": "Screened At", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "Full Name", "displayName": "Full Name", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "Email", "displayName": "Email", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "Role", "displayName": "Role", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "Years", "displayName": "Years", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "Score", "displayName": "Score", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "Next Step", "displayName": "Next Step", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "Strengths", "displayName": "Strengths", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "Concerns", "displayName": "Concerns", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "Summary", "displayName": "Summary", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "Action", "displayName": "Action", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b2c3d4e5-0009-4000-8000-000000000009",
+      "name": "Log to Screening Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1140,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c2",
+              "leftValue": "={{ $('Parse AI Output').item.json.passed }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "b2c3d4e5-0010-4000-8000-000000000010",
+      "name": "Score >= Pass Score?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1360,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Normalize Candidate').item.json.email }}",
+        "subject": "=Interview invitation: {{ $('Normalize Candidate').item.json.role }} at {{ $('Normalize Candidate').item.json.companyName }}",
+        "emailType": "html",
+        "message": "=<p>Hi {{ $('Normalize Candidate').item.json.firstName }},</p><p>Thank you for applying for the <b>{{ $('Normalize Candidate').item.json.role }}</b> role at {{ $('Normalize Candidate').item.json.companyName }}. We enjoyed reading about your experience and would like to invite you to a 30-minute interview.</p><p>Please pick a time that suits you here: <a href=\"{{ $('Normalize Candidate').item.json.bookingLink }}\">book your interview</a></p><p>Looking forward to speaking with you.</p><p>Best regards,<br>The Recruiting Team<br>{{ $('Normalize Candidate').item.json.companyName }}</p>",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "b2c3d4e5-0011-4000-8000-000000000011",
+      "name": "Send Interview Invite",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1600,
+        -120
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a recruiter at {{ $('Normalize Candidate').item.json.companyName }}. Write a short, kind email to a candidate who will not move to interview right now.\n\nCandidate first name: {{ $('Normalize Candidate').item.json.firstName }}\nRole applied for: {{ $('Normalize Candidate').item.json.role }}\nDecision: {{ $('Parse AI Output').item.json.nextStep }}\nOne genuine strength to mention: {{ $('Parse AI Output').item.json.strengths[0] }}\n\nRules:\n- If the decision is \"hold\": say the application is on hold and the team will get back to them if the shortlist changes.\n- If the decision is \"reject\": say clearly but warmly that they will not move forward for this role, and encourage them to apply for future roles.\n- The candidate only submitted an online application. Do not mention calls, interviews or conversations.\n- Never mention scores, screening criteria, AI or automation.\n- Max 120 words. Sign off as \"The Recruiting Team\".\n- No placeholders like [Company Name].\n- Body as simple HTML using <p> tags only.\n\nReturn ONLY valid JSON, no markdown fences:\n{\"subject\": \"...\", \"body_html\": \"...\"}",
+        "hasOutputParser": false
+      },
+      "id": "b2c3d4e5-0012-4000-8000-000000000012",
+      "name": "AI Write Candidate Reply",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.5,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "position": [
+        1600,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-flash-lite-latest",
+        "options": {
+          "temperature": 0.5
+        }
+      },
+      "id": "b2c3d4e5-0013-4000-8000-000000000013",
+      "name": "Gemini Reply Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1600,
+        340
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map(item => {\n  const raw = String(item.json.text || '');\n  const start = raw.indexOf('{');\n  const end = raw.lastIndexOf('}');\n  const clean = start >= 0 && end > start ? raw.slice(start, end + 1) : raw;\n  let parsed;\n  try {\n    parsed = JSON.parse(clean);\n  } catch (e) {\n    throw new Error('AI output is not valid JSON: ' + raw.slice(0, 200));\n  }\n  if (!parsed.subject || !parsed.body_html) {\n    throw new Error('AI output missing subject or body_html');\n  }\n  return { json: { subject: parsed.subject, bodyHtml: parsed.body_html } };\n});"
+      },
+      "id": "b2c3d4e5-0014-4000-8000-000000000014",
+      "name": "Parse Reply",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1860,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "subject": "={{ $json.subject }}",
+        "emailType": "html",
+        "message": "={{ $json.bodyHtml }}",
+        "options": {
+          "sendTo": "={{ $('Normalize Candidate').item.json.email }}"
+        }
+      },
+      "id": "b2c3d4e5-0015-4000-8000-000000000015",
+      "name": "Save Reply as Gmail Draft",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        2080,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Normalize Candidate').item.json.recruiterEmail }}",
+        "subject": "=[{{ $('Parse AI Output').item.json.passed ? 'Interview' : 'Review draft' }}] {{ $('Normalize Candidate').item.json.fullName }} - {{ $('Normalize Candidate').item.json.role }} ({{ $('Parse AI Output').item.json.score }}/5)",
+        "emailType": "html",
+        "message": "=<p><b>{{ $('Normalize Candidate').item.json.fullName }}</b> applied for <b>{{ $('Normalize Candidate').item.json.role }}</b> ({{ $('Normalize Candidate').item.json.yearsExperience }} yrs).</p><p><b>Score:</b> {{ $('Parse AI Output').item.json.score }}/5 &middot; <b>Next step:</b> {{ $('Parse AI Output').item.json.nextStep }}</p><p>{{ $('Parse AI Output').item.json.summary }}</p><p><b>Strengths</b></p><ul>{{ $('Parse AI Output').item.json.strengths.map(s => '<li>' + s + '</li>').join('') }}</ul><p><b>Concerns</b></p><ul>{{ $('Parse AI Output').item.json.concerns.map(s => '<li>' + s + '</li>').join('') }}</ul><p><b>Action:</b> {{ $('Parse AI Output').item.json.passed ? 'Interview invite with booking link sent to the candidate.' : 'A reply is waiting in your Gmail Drafts. Review and send it, or delete it.' }}</p>{{ $('Normalize Candidate').item.json.profileUrl ? '<p>Profile: <a href=\"' + $('Normalize Candidate').item.json.profileUrl + '\">' + $('Normalize Candidate').item.json.profileUrl + '</a></p>' : '' }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "b2c3d4e5-0016-4000-8000-000000000016",
+      "name": "Notify Recruiter",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        2320,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "New Application": {
+      "main": [
+        [
+          {
+            "node": "Skip Empty Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Skip Empty Rows": {
+      "main": [
+        [
+          {
+            "node": "Normalize Candidate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Candidate": {
+      "main": [
+        [
+          {
+            "node": "Get Role Rubric",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Role Rubric": {
+      "main": [
+        [
+          {
+            "node": "AI Screen Candidate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Screening Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Screen Candidate",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Screen Candidate": {
+      "main": [
+        [
+          {
+            "node": "Parse AI Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse AI Output": {
+      "main": [
+        [
+          {
+            "node": "Log to Screening Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log to Screening Sheet": {
+      "main": [
+        [
+          {
+            "node": "Score >= Pass Score?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Score >= Pass Score?": {
+      "main": [
+        [
+          {
+            "node": "Send Interview Invite",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI Write Candidate Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Interview Invite": {
+      "main": [
+        [
+          {
+            "node": "Notify Recruiter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Reply Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Write Candidate Reply",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Write Candidate Reply": {
+      "main": [
+        [
+          {
+            "node": "Parse Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Reply": {
+      "main": [
+        [
+          {
+            "node": "Save Reply as Gmail Draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Reply as Gmail Draft": {
+      "main": [
+        [
+          {
+            "node": "Notify Recruiter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Jakarta"
+  },
+  "pinData": {}
+}
