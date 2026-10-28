@@ -22,7 +22,7 @@ Thumbs.db
 .vscode/
 .idea/
 
-# Raw recordings (upload ke YouTube/Loom, jangan commit)
+# Raw recordings (host them on YouTube/Loom/Drive, not in git)
 *.mp4
 *.mov
 *.mkv

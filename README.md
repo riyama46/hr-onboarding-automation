@@ -6,7 +6,6 @@ Each demo below is a working workflow you can import into your own n8n instance.
 | Demo | What it automates | Status |
 |------|-------------------|--------|
 | [1. Employee Onboarding](#demo-1--employee-onboarding) | New hire form → AI welcome email, shared checklist, Day-1 meeting, HR summary | ✅ |
-| 2. _TBD_ | | 🚧 |
 
 ---
 
@@ -26,7 +25,7 @@ Onboarding a new hire at a small/medium company is mostly copy-paste work for HR
 - Scheduling a first-day / orientation meeting
 - Telling the rest of the HR team that someone new is starting
 
-That is roughly **30–60 minutes per hire** _(adjust to your own estimate)_, and steps get missed when HR is busy.
+That is roughly **30–60 minutes per hire**, and steps get missed when HR is busy.
 
 ### Solution
 
@@ -58,7 +57,7 @@ Google Form → Google Sheet → Normalize → Gemini → Drive (copy + share) �
 | Missed steps | Common when busy | Every step runs every time |
 | Welcome email | Generic template | Personalised by Gemini |
 
-_Numbers are estimates for a demo setup. Replace them with real figures once used by a client._
+_Estimates from the demo setup; actual savings depend on your hiring volume._
 
 ### Tech stack
 
@@ -85,3 +84,7 @@ docs/          setup guides per demo
 Workflow JSON files in this repo contain **no API keys or OAuth tokens**. n8n stores credentials
 separately; after importing, you create your own credentials and attach them to each node.
 Spreadsheet IDs, folder IDs and email addresses in the exports are placeholders.
+
+## License
+
+MIT. Need this adapted to your HR process? [rifaldiradya.com](https://rifaldiradya.com)
